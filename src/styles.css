@@ -1,0 +1,346 @@
+/* Bon Kim — portfolio stylesheet.
+   Written for this static rebuild. Type scale, colour and spacing reproduce the
+   design of the original site; none of the platform's own CSS is reused.
+   Diatype (licensed only through the old host) is replaced by IBM Plex Mono,
+   which is SIL Open Font Licensed and shipped in assets/fonts/. */
+
+/* ---------------------------------------------------------------- fonts --- */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2122, U+2191, U+2193, U+2212;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-400-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2122, U+2191, U+2193, U+2212;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-ext-400-normal.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('fonts/ibm-plex-mono-latin-ext-600-normal.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Plex Mono carries no Hangul or Han, so every Korean title and the Korean essay
+   pages would otherwise fall through to whatever CJK face the reader happens to
+   have. This is a subset of Noto Sans KR cut from the site's own text by
+   build/fetch-fonts.js — Hangul, the Hanja in titles such as 열곡(熱哭), and CJK
+   punctuation. The unicode-range keeps it off the wire on pages with no CJK, and
+   the variable weight axis lets one file serve both 400 and 600. */
+@font-face {
+  font-family: 'Noto Sans KR';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('fonts/noto-sans-kr-cjk-subset.woff2') format('woff2');
+  unicode-range: U+1100-11FF, U+3000-303F, U+3130-318F, U+3400-4DBF, U+4E00-9FFF,
+                 U+AC00-D7AF, U+F900-FAFF, U+FF00-FFEF;
+}
+
+/* Plex Mono first: it wins for Latin, and has no CJK glyphs to win with, so
+   Korean falls to the subset above. The system faces stay as a last resort for
+   any CJK the subset has not been rebuilt to include yet. */
+:root {
+  --font: 'IBM Plex Mono', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', monospace;
+  --ink: #000;
+  --ink-soft: rgba(0, 0, 0, 0.85);
+  --paper: #ebebeb;
+  --scrim: rgba(0, 0, 0, 0.53);
+  --pad: 26px;       /* page inset, matching the original */
+  --measure: 90%;
+}
+
+/* Bon's markup scales type inline, e.g. <span class="small" style="--font-scale: 0.9">.
+   Registering it with inherits:false is what makes that faithful: the factor
+   applies to the element carrying it and does not leak onto descendants, so a
+   scaled span inside a scaled span doesn't compound. Every sized rule below
+   multiplies its own base by it. */
+@property --font-scale {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+/* ------------------------------------------------------------- baseline --- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* The original's root is 12.96px, not the 16px browser default — every rem size
+   in its design derives from this, so matching it is what makes the type scale
+   line up. Below its desktop breakpoint the original shrinks the root further;
+   this rebuild is responsive rather than a separate mobile site, so it eases
+   down on its own curve instead of reproducing that one exactly. */
+html {
+  font-size: 12.96px;
+  -webkit-text-size-adjust: 100%;
+}
+@media (max-width: 900px) { html { font-size: 12.4px; } }
+@media (max-width: 600px) { html { font-size: 11.7px; } }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 2;
+  letter-spacing: -0.008em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* An element carrying --font-scale but no type class scales from its inherited
+   size. :where() keeps this at zero specificity so the typed rules below always
+   win — otherwise this attribute selector (0,1,0) would silently beat h1 (0,0,1)
+   and tie with .small, and the scale would be dropped or applied to the wrong base. */
+:where([style*="--font-scale"]) { font-size: calc(1em * var(--font-scale)); }
+
+img { max-width: 100%; display: block; }
+
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:active, .linked:active { opacity: 0.7; }
+
+h1, h2 { margin: 0; line-height: 2; }
+h1 { font-size: calc(1.35rem * var(--font-scale)); font-weight: 700; letter-spacing: 0; }
+h2 { font-size: calc(1.2rem * var(--font-scale)); font-weight: 600; letter-spacing: 0; }
+
+hr { display: block; height: 1px; border: 0; background: rgba(0, 0, 0, 0.75); }
+
+sub { position: relative; vertical-align: baseline; top: 0.3em; }
+sup { position: relative; vertical-align: baseline; top: -0.4em; }
+
+/* Bon's text classes, carried across so her inline markup keeps working. Each
+   multiplies its own base size by the element's --font-scale. */
+.small        { font-size: calc(1.3rem * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; display: inline-block; }
+.small-white  { font-size: calc(1.3rem * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; color: #fff; display: block; }
+.bodyoftextlight { font-size: calc(1.05rem * var(--font-scale)); font-weight: 400; color: var(--ink-soft); }
+.reading      { font-size: calc(1.85rem * var(--font-scale)); font-weight: 400; line-height: 1.8; }
+.reading-text { font-size: calc(1.2rem * var(--font-scale));  font-weight: 400; }
+.small-caps   { font-variant: small-caps; text-transform: lowercase; }
+
+ol { margin: 0; padding: 0 0 0 2.5em; }
+ul { margin: 0; padding: 0 0 0 2em; }
+blockquote { margin: 0; padding: 0 0 0 2em; }
+
+/* --------------------------------------------------------------- themes --- */
+/* Dark = white type over a full-bleed photograph (home).
+   Light = black type on grey (works index, work pages). */
+.theme-dark body, .theme-dark { color: #fff; }
+.theme-dark .site-header a,
+.theme-dark .site-footer { color: #fff; }
+.theme-dark .site-footer a { color: #fff; }
+
+/* ------------------------------------------------------------ backdrop ---- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: #000;
+}
+.backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* build.js emits the original's fit + focal point */
+}
+
+/* -------------------------------------------------------------- header ---- */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: var(--pad);
+  pointer-events: none;
+}
+.site-header a { pointer-events: auto; }
+
+.site-title { font-size: calc(1.35rem * 1.25); }
+.site-nav { font-size: calc(1.2rem * 0.95); font-weight: 600; }
+.site-nav .sep { opacity: 0.6; margin: 0 0.35em; }
+.site-nav a[aria-current='page'] { text-decoration: underline; }
+
+/* ---------------------------------------------------------------- main ---- */
+.site-main {
+  flex: 1 0 auto;
+  padding: calc(var(--pad) * 4) var(--pad) calc(var(--pad) * 2);
+}
+.page { max-width: var(--measure); margin: 0 auto; }
+.page-gallery { max-width: 100%; }
+
+/* -------------------------------------------------------------- footer ---- */
+.site-footer {
+  flex: 0 0 auto;
+  padding: var(--pad);
+  font-size: 0.8em;
+}
+.theme-dark .site-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+.site-footer a { text-decoration: underline; text-underline-offset: 0.2em; }
+
+/* ------------------------------------------------------------ galleries --- */
+/* Masonry, packed at build time (see build/lib.js). Every box is placed in
+   container-query units — 1cqw is 1% of the gallery's width — so one packing
+   scales fluidly and the breakpoints only swap the column count. No script.
+   Falls back to a readable single column where cqw is unsupported. */
+.gallery-masonry {
+  container-type: inline-size;
+  position: relative;
+  margin: 0;
+  height: calc(var(--h3) * 1cqw);
+}
+.gallery-masonry .media-item {
+  position: absolute;
+  left: calc(var(--x3) * 1cqw);
+  top: calc(var(--y3) * 1cqw);
+  width: calc(var(--w3) * 1cqw);
+  margin: 0;
+  aspect-ratio: var(--ar);
+}
+
+@media (max-width: 900px) {
+  .gallery-masonry { height: calc(var(--h2) * 1cqw); }
+  .gallery-masonry .media-item {
+    left: calc(var(--x2) * 1cqw);
+    top: calc(var(--y2) * 1cqw);
+    width: calc(var(--w2) * 1cqw);
+  }
+}
+@media (max-width: 560px) {
+  .gallery-masonry { height: calc(var(--h1) * 1cqw); }
+  .gallery-masonry .media-item {
+    left: calc(var(--x1) * 1cqw);
+    top: calc(var(--y1) * 1cqw);
+    width: calc(var(--w1) * 1cqw);
+  }
+}
+
+@supports not (width: 1cqw) {
+  .gallery-masonry { height: auto; display: flex; flex-direction: column; gap: 1.5rem; }
+  .gallery-masonry .media-item { position: static; width: 100%; }
+}
+
+/* Outside a gallery an image fills its column unless it carries scale="50%",
+   in which case two flow side by side — hence inline-block rather than block. */
+/* No margin: Bon's own markup already spaces images with <br>, and scaled pairs
+   are meant to butt together. Adding our own would double the rhythm.
+   vertical-align stays at the initial `baseline`: an inline-block with no line
+   box of its own baselines on its bottom edge, so a scaled pair of unequal
+   height sits flush along the bottom — which is how the original reads. */
+.media-item {
+  display: inline-block;
+  width: var(--scale, 100%);
+  margin: 0;
+  position: relative;
+}
+.media-item > a { display: block; position: relative; height: 100%; }
+.media-item img { width: 100%; height: auto; }
+
+/* An embedded video: the figure holds the aspect ratio and the player fills it.
+   The one place the site loads a third party at runtime — video can't be
+   self-hosted — kept to youtube-nocookie and lazy so it costs nothing until seen. */
+.video-item { aspect-ratio: var(--ar, 16 / 9); }
+.media-item iframe.video { width: 100%; height: 100%; border: 0; display: block; }
+.video-link { text-decoration: underline; }
+
+/* Inside the masonry the figure is the box, so the image fills it exactly. */
+.gallery-masonry .media-item img { height: 100%; object-fit: cover; }
+
+/* Captions inside a gallery sit over the image and appear on hover, matching
+   the original. Outside a gallery they read as ordinary captions below it. */
+.media-item .caption {
+  font-size: calc(1.25rem * var(--font-scale));
+  font-weight: 400;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.83);
+  margin-top: 0.5em;
+}
+.gallery-masonry .media-item .caption {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--scrim);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.gallery-masonry .media-item:hover .caption,
+.gallery-masonry .media-item:focus-within .caption { opacity: 1; }
+
+/* Hover reveal hides information on touch, where there is no hover; show it. */
+@media (hover: none) {
+  .gallery-masonry .media-item .caption { opacity: 1; }
+}
+
+/* ---------------------------------------------------------- column sets --- */
+/* Cargo's column-set is a flex row and each column-unit takes a share of it.
+   A unit with span=N (of 12) grows proportionally; a unit with no span shares
+   the row equally with its siblings — which is how the multi-column galleries
+   are laid out. flex-grow carries the span and flex-basis:0 makes the ratio
+   exact, while `gap` handles the gutter. Flex children are direct-only, so this
+   composes correctly when column-sets nest. */
+.column-set {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gutter, 1rem);
+  margin: 0 0 1.5rem;
+}
+.column-unit {
+  flex: var(--span, 1) 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .column-set { display: block; }   /* mobile-stack, the responsive way */
+  .column-unit { margin-bottom: var(--gutter, 1rem); }
+}
+
+.text-icon { display: inline-block; }
+
+/* ------------------------------------------------------------- a11y ------- */
+:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

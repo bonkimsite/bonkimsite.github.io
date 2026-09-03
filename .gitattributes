@@ -1,0 +1,21 @@
+# The Pages workflow rebuilds site/ and fails if the result differs from what is
+# committed. That comparison is only meaningful if the bytes survive the trip
+# from a Windows checkout to a Linux runner, so keep everything the build writes
+# in LF and let git treat the binaries as binary.
+*               text=auto eol=lf
+*.html          text eol=lf
+*.css           text eol=lf
+*.js            text eol=lf
+*.json          text eol=lf
+*.xml           text eol=lf
+*.md            text eol=lf
+*.yml           text eol=lf
+
+*.woff2         binary
+*.jpg           binary
+*.jpeg          binary
+*.png           binary
+*.webp          binary
+*.svg           binary
+*.ico           binary
+*.ttf           binary

@@ -1,0 +1,69 @@
+name: Deploy to GitHub Pages
+
+# The site in site/ is committed, so deployment is just an upload. Images are
+# fetched by `npm run media` on a maintainer's machine, not in CI.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Regenerate the HTML from build/data/ and fail if what is committed in
+      # site/ does not match. The build is deterministic -- no timestamps, no
+      # ordering by hash -- so any difference here is a real one: content edited
+      # without re-running the build, or a build script changed without
+      # committing its output. Images and fonts are fetched on a maintainer's
+      # machine, not in CI, and neither step touches them.
+      - name: Build
+        run: node build/build.js
+
+      - name: Fail if the committed site is stale
+        run: |
+          if ! git diff --quiet -- site; then
+            echo "site/ does not match a fresh build of build/data/:"
+            git diff --stat -- site
+            echo
+            echo 'Run "npm run build" (and "npm run media" / "npm run fonts" if'
+            echo 'images or Korean text changed) and commit the result.'
+            exit 1
+          fi
+          echo "site/ is up to date with build/data/."
+
+      # Validates the built output: no platform leftovers, no dead links, and
+      # every CJK character on a page present in the vendored font subset.
+      - name: Check
+        run: node build/check.js
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

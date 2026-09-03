@@ -1,0 +1,17 @@
+{
+  "name": "bon-kim-site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static rebuild of Bon Kim's portfolio, deployable to GitHub Pages.",
+  "scripts": {
+    "build": "node build/build.js",
+    "media": "node build/fetch-media.js",
+    "fonts": "node build/fetch-fonts.js",
+    "check": "node build/check.js",
+    "all": "npm run build && npm run media && npm run fonts && npm run check",
+    "serve": "npx --yes http-server site -p 8899 -c-1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
