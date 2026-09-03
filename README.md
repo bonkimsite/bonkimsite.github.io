@@ -134,11 +134,44 @@ collapse into their desktop original — see `MOBILE_TWINS` in `build/lib.js`.
 ### Layout: column-sets
 
 Beyond the masonry, work pages use Cargo `column-set`/`column-unit` rows. A unit
-with `span=N` takes N of 12 columns; a unit with no span shares the row equally
-with its siblings (the multi-column galleries). This is reproduced with flexbox
-(`flex: var(--span,1) 1 0`), which also composes correctly when column-sets nest.
+with `span=N` takes N of 12 columns; a unit with **no** span shares the row equally
+with its siblings (the multi-column galleries). Those two cases are genuinely
+different, so the build keeps them distinct in the markup — `span=1` and no-span
+are not the same thing.
+
+The span is not a flex-grow share. Cargo lays the row out as 12 columns with the
+gutter *between* them, so a unit spanning N also swallows the N-1 gutters inside
+it:
+
+    col   = (W - 11g) / 12
+    width = N*col + (N-1)*g   ==   N/12*W - g*(12-N)/12
+
+Growing 9:3 instead leaves a span-9 unit 9.2px short at 1440px, and the error
+scales with the gutter, so the width goes in as an explicit `flex-basis`. A full
+row's bases sum to `W` minus one gutter, which the single `gap` puts back.
+
 Images carrying `scale="50%"` take half their column so two sit side by side, and
 they bottom-align the way the original does.
+
+### Layout: how the values were arrived at
+
+The page chrome is not one set of numbers. Driving headless Chrome over the
+original at a 1440px viewport and reading computed styles gives:
+
+| page | reserved above | measure |
+| --- | --- | --- |
+| works index | 95.56px | full-bleed |
+| work pages | 115.06px | 90% |
+| CV | 95.56px | 73% |
+| contact | 95.56px | 90% |
+
+Work pages sit under a taller pinned header than everything else, and the CV runs
+narrower — hence `body.kind-*` in the stylesheet. The measure is a share of the
+*viewport*, padded inside; taking a share of an already-padded box shrinks it.
+
+Checked the same way, the rebuild now matches the original to **0.3-1.1px on every
+image width and x position**, and every text run agrees exactly on font-size,
+line-height, weight and letter-spacing.
 
 ## Deploying to GitHub Pages
 
@@ -205,9 +238,14 @@ alternative is a click-to-play poster image linking out to YouTube.
 
 ## Known gaps
 
-- **Page height** runs a little taller than the original (single-digit percent)
-  from small differences in text rhythm and in image sizing within column cells;
-  positions and structure match.
+- **Vertical position drifts by 12-27px** on long work pages — under 0.5% of page
+  height, and image widths and x positions are exact. Body content sits ~11.7px
+  higher than the original relative to the page title: the title is an
+  inline-block whose line box the original makes taller by that much, and the
+  cause has not been identified. Setting the title's `line-height` to 2.6 aligns
+  every image to within 0.2px, but that inflates the title's own box from 38.5px
+  to 50px — and it has a background colour, so the block behind it would visibly
+  fatten. Not worth trading a correct metric for a coincidental fit.
 - **The exhibitions page is unfinished upstream** — 10 of its 16 gallery slots are
   empty placeholders in Bon's own content. The rebuild drops them rather than
   rendering holes, so the page shows the 6 real images. Nothing to fix here; it

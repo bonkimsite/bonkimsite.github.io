@@ -70,9 +70,21 @@
   --ink-soft: rgba(0, 0, 0, 0.85);
   --paper: #ebebeb;
   --scrim: rgba(0, 0, 0, 0.53);
-  --pad: 26px;       /* page inset, matching the original */
+  --pad: 2rem;       /* page inset: 25.92px at the 12.96px root, as the original */
+  /* Space reserved above the page for the pinned header, and the width the
+     content runs to. The original does not use one value for either: measured
+     at 1440px, most pages reserve 95.56px and run to 90%, work pages sit under
+     a taller header (115.06px), the CV runs to 73%, and the works index is
+     full-bleed. Below, in rem so they track the 12.96px root.
+     At the bottom the original reserves 103.34px and overlays the footer inside
+     it; ours keeps the footer in flow, so the footer's own box is that space. */
+  --chrome-top: 7.374rem;
   --measure: 90%;
 }
+
+body.kind-work { --chrome-top: 8.878rem; }   /* taller pinned header */
+body.kind-cv   { --measure: 73%; }         /* the CV runs narrower */
+
 
 /* Bon's markup scales type inline, e.g. <span class="small" style="--font-scale: 0.9">.
    Registering it with inherits:false is what makes that faithful: the factor
@@ -111,7 +123,6 @@ body {
   font-size: 1.3rem;
   font-weight: 600;
   line-height: 2;
-  letter-spacing: -0.008em;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -140,7 +151,7 @@ sup { position: relative; vertical-align: baseline; top: -0.4em; }
    multiplies its own base size by the element's --font-scale. */
 .small        { font-size: calc(1.3rem * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; display: inline-block; }
 .small-white  { font-size: calc(1.3rem * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; color: #fff; display: block; }
-.bodyoftextlight { font-size: calc(1.05rem * var(--font-scale)); font-weight: 400; color: var(--ink-soft); }
+.bodyoftextlight { font-size: calc(1.05rem * var(--font-scale)); font-weight: 400; color: var(--ink-soft); display: block; }
 .reading      { font-size: calc(1.85rem * var(--font-scale)); font-weight: 400; line-height: 1.8; }
 .reading-text { font-size: calc(1.2rem * var(--font-scale));  font-weight: 400; }
 .small-caps   { font-variant: small-caps; text-transform: lowercase; }
@@ -194,9 +205,15 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
 /* ---------------------------------------------------------------- main ---- */
 .site-main {
   flex: 1 0 auto;
-  padding: calc(var(--pad) * 4) var(--pad) calc(var(--pad) * 2);
+  padding: var(--chrome-top) 0 0;
 }
-.page { max-width: var(--measure); margin: 0 auto; }
+/* The original pads the content box on every side, not just the sides. */
+.page {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--pad);
+}
+/* A gallery index runs full-bleed, so its inset is the page inset alone. */
 .page-gallery { max-width: 100%; }
 
 /* -------------------------------------------------------------- footer ---- */
@@ -260,11 +277,15 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
    in which case two flow side by side — hence inline-block rather than block. */
 /* No margin: Bon's own markup already spaces images with <br>, and scaled pairs
    are meant to butt together. Adding our own would double the rhythm.
-   vertical-align stays at the initial `baseline`: an inline-block with no line
-   box of its own baselines on its bottom edge, so a scaled pair of unequal
-   height sits flush along the bottom — which is how the original reads. */
+   vertical-align is `bottom`, not the initial `baseline`. Baseline alignment
+   leaves the parent's descender space under every image, which measured ~11.7px
+   too much per image against the original and accumulated down the page (31.5px
+   adrift by the last one). `bottom` removes that gap and still sits a scaled
+   pair of unequal height flush along the bottom, which is what baseline was
+   chosen for in the first place. */
 .media-item {
   display: inline-block;
+  vertical-align: bottom;
   width: var(--scale, 100%);
   margin: 0;
   position: relative;
@@ -324,12 +345,26 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
   flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--gutter, 1rem);
-  margin: 0 0 1.5rem;
+  margin: 0;
 }
+/* Cargo lays a row out as 12 columns with the gutter *between* them, so a unit
+   spanning N columns also swallows the N-1 gutters inside it:
+
+       col   = (W - 11g) / 12
+       width = N*col + (N-1)*g  ==  N/12*W - g*(12-N)/12
+
+   Flex-grow cannot express that: sharing the free space N:12 leaves a span-9
+   unit 9.2px short at 1440px (917.5 rather than the original's 926.6), and the
+   error scales with the gutter. So the width goes in as an explicit basis, and
+   the row still fills exactly -- the bases of a full row sum to W minus one
+   gutter, which the single `gap` puts back. */
 .column-unit {
-  flex: var(--span, 1) 1 0;
+  flex: 0 0 calc(var(--span) / 12 * 100% - var(--gutter, 1rem) * (12 - var(--span)) / 12);
   min-width: 0;
 }
+/* A unit with no span at all is the other case: it shares the row equally with
+   its siblings, which is how the multi-column galleries are built. */
+.column-unit-auto { flex: 1 1 0; }
 
 @media (max-width: 768px) {
   .column-set { display: block; }   /* mobile-stack, the responsive way */

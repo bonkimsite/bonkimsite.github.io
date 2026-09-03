@@ -342,10 +342,13 @@ function renderLayout(html) {
     .replace(/<\/column-set>/g, '</div>')
     .replace(/<column-unit([^>]*)>/g, (f, at) => {
       const a = parseAttrs(at);
-      // span is a unit's share of the row (of 12). A unit with no span shares
-      // the row equally with its siblings, so it flexes as 1 rather than filling.
+      // span is a unit's share of a 12-column grid. A unit with *no* span is a
+      // different thing entirely — it shares the row equally with its siblings
+      // (the multi-column galleries) — so the two cases must stay
+      // distinguishable in the markup: span=1 and no-span are not the same.
       const raw = parseInt(a.span, 10);
-      const span = raw ? Math.min(12, Math.max(1, raw)) : 1;
+      if (!raw) return '<div class="column-unit column-unit-auto">';
+      const span = Math.min(12, Math.max(1, raw));
       return `<div class="column-unit" style="--span:${span}">`;
     })
     .replace(/<\/column-unit>/g, '</div>')

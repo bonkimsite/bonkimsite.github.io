@@ -53,7 +53,7 @@ function backdropFor(page) {
 // Blocks IBM Plex Mono does not cover, so the CJK subset is what renders them.
 const CJK_RE = /[ᄀ-ᇿ　-〿㄰-㆏㐀-䶿一-鿿가-힯豈-﫿＀-￯]/;
 
-function layout({ title, purl, route, theme, backdrop, main, footer, description, hasCJK }) {
+function layout({ title, purl, route, theme, backdrop, main, footer, description, hasCJK, kind }) {
   const bd = backdrop
     ? `<div class="backdrop"><img src="${backdrop.url}" alt="${L.escapeAttr(backdrop.alt)}" ` +
       `style="object-fit:${backdrop.fit};object-position:${backdrop.pos}" fetchpriority="high"></div>`
@@ -72,7 +72,7 @@ function layout({ title, purl, route, theme, backdrop, main, footer, description
 ${hasCJK ? `<link rel="preload" href="/assets/fonts/noto-sans-kr-cjk-subset.woff2" as="font" type="font/woff2" crossorigin>
 ` : ''}<link rel="stylesheet" href="/assets/styles.css">
 </head>
-<body>
+<body class="kind-${kind}">
 ${bd}<header class="site-header">
 <h1 class="site-title"><a href="/">Bon Kim</a></h1>
 ${nav(purl)}
@@ -142,6 +142,13 @@ for (const [purl, route] of Object.entries(L.ROUTES)) {
     // keeps the file off Latin-only pages, and preloading it there would pull
     // 77KB nothing renders with.
     hasCJK: CJK_RE.test(page.title || '') || CJK_RE.test(body),
+    // The original does not give every page the same chrome: work pages sit
+    // under a taller pinned header, and the CV runs to a narrower measure.
+    // Measured on the original at 1440px -- see styles.css.
+    kind: route.startsWith('/work/') ? 'work'
+        : route === '/cv/'           ? 'cv'
+        : isGalleryIndex             ? 'gallery'
+        : 'page',
   });
 
   built.push({
