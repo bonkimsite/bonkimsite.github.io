@@ -215,7 +215,9 @@ const MEASURE_EXPRESSION = String.raw`(() => {
     style: style(element),
   });
 
-  const headings = matches('h1');
+  // Some of the original mobile work pages use Cargo's custom text style for
+  // the lead title instead of an h1.
+  const headings = matches('h1, .mobile-heading1');
   const pageTitle = headings.find(heading => /three legs/i.test(cleanText(heading))) || headings.at(-1);
   const columnSets = matches('column-set, .column-set').map(set => ({
     ...describe(set),

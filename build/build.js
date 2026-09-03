@@ -112,6 +112,22 @@ function writePage(route, html) {
   return path.relative(OUT, path.join(dir, 'index.html')).replace(/\\/g, '/');
 }
 
+// Cargo has separate copies of the work pages for small screens. Their lead
+// titles use a dedicated mobile scale (with two intentional exceptions), while
+// the rest of their content is substantially the same. Mark the corresponding
+// heading in our single responsive page so CSS can reproduce that treatment.
+function markWorkTitle(html, purl) {
+  const modifier = purl === 'franz-kafka-ein-landarzt'
+    ? ' work-title--compact'
+    : purl === 'mourning-heat-(열곡(熱哭)),-2024'
+      ? ' work-title--mourning'
+      : '';
+
+  return html
+    .replace(/<h1(?=[\s>])/, `<h1 class="work-title${modifier}"`)
+    .replace(/(<h1 class="work-title[^>]*>)[ \t]+\n/, '$1\n');
+}
+
 // ---------------------------------------------------------------------------
 const built = [];
 for (const [purl, route] of Object.entries(L.ROUTES)) {
@@ -120,7 +136,8 @@ for (const [purl, route] of Object.entries(L.ROUTES)) {
 
   const isHome = route === '/';
   const backdrop = backdropFor(page);
-  const body = L.convert(page.content, { usedMedia, title: L.stripTags(page.title) });
+  let body = L.convert(page.content, { usedMedia, title: L.stripTags(page.title) });
+  if (route.startsWith('/work/')) body = markWorkTitle(body, purl);
 
   // A gallery index runs full-bleed; prose pages keep the narrower measure.
   const isGalleryIndex = /<div class="gallery gallery-masonry/.test(body) && !/<column-set/.test(body);

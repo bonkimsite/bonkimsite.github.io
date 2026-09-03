@@ -133,6 +133,8 @@ Two details the router handles: Cargo urls are case-insensitive (a link to
 **hand-maintained mobile duplicates** of every page (`/works-2` + `/mobile-works`,
 `/cv-` + `/cv-mobile-1`, …). This rebuild is responsive, so the duplicates
 collapse into their desktop original — see `MOBILE_TWINS` in `build/lib.js`.
+Presentation differences that matter are retained responsively: work-page lead
+titles use the mobile copies' scale and tighter content inset at 800px and below.
 
 ### Layout: column-sets
 
@@ -176,9 +178,10 @@ registered property's initial value must be computationally independent, and
 `rem` is not, so registering it silently drops the declaration and takes every
 untyped element's size with it.
 
-The original's desktop root is 14.4px. Keeping that root, and making each text
-class state its own line-height/display rather than accidentally inheriting from
-a caption, keeps nested scaled copy idempotent and preserves long-form wrapping.
+The original's desktop root is 14.4px and follows two measured fluid curves below
+1000px. Keeping that responsive root, and making each text class state its own
+line-height/display rather than accidentally inheriting from a caption, keeps
+nested scaled copy idempotent and preserves long-form wrapping.
 
 ### Layout: how the values were arrived at
 

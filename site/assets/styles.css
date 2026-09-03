@@ -115,16 +115,19 @@ body.kind-cv   { --measure: 73%; }         /* the CV runs narrower */
 *, *::before, *::after { box-sizing: border-box; }
 
 /* The original's root is 14.4px, not the 16px browser default — every rem size
-   in its design derives from this, so matching it is what makes the type scale
-   line up. Below its desktop breakpoint the original shrinks the root further;
-   this rebuild is responsive rather than a separate mobile site, so it eases
-   down on its own curve instead of reproducing that one exactly. */
+   in its design derives from this. Below 1000px Cargo follows two linear type
+   curves; these reproduce its measured root size from narrow desktop widths
+   down through phones. */
 html {
   font-size: 14.4px;
   -webkit-text-size-adjust: 100%;
 }
-@media (max-width: 900px) { html { font-size: 12.4px; } }
-@media (max-width: 600px) { html { font-size: 11.7px; } }
+@media (max-width: 1000px) {
+  html { font-size: calc(10.285714px + 0.411429vw); }
+}
+@media (max-width: 562.5px) {
+  html { font-size: 2.24vw; }
+}
 
 body {
   margin: 0;
@@ -228,6 +231,24 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
 }
 /* A gallery index runs full-bleed, so its inset is the page inset alone. */
 .page-gallery { max-width: 100%; }
+
+/* The source site maintains separate mobile copies of its work pages. Those
+   copies use a tighter .8rem content inset and a 1.6rem lead title, rather than
+   carrying the desktop h1 scale into the narrow column. Keeping that treatment
+   here makes the usual work titles remain on one line at phone widths. */
+@media (max-width: 800px) {
+  body.kind-work { --chrome-top: 8.16rem; }
+  body.kind-work .page { padding: 0.8rem; }
+
+  .work-title { font-size: 1.6rem; }
+  .work-title--compact { font-size: 1.4rem; }
+  .work-title--mourning {
+    display: block !important;
+    font-size: 1.88rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+}
 
 /* -------------------------------------------------------------- footer ---- */
 .site-footer {
