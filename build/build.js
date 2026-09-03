@@ -162,7 +162,8 @@ for (const [purl, route] of Object.entries(L.ROUTES)) {
     // The original does not give every page the same chrome: work pages sit
     // under a taller pinned header, and the CV runs to a narrower measure.
     // Measured on the original at 1440px -- see styles.css.
-    kind: route.startsWith('/work/') ? 'work'
+    kind: route === '/'              ? 'home'
+        : route.startsWith('/work/') ? 'work'
         : route === '/cv/'           ? 'cv'
         : isGalleryIndex             ? 'gallery'
         : 'page',

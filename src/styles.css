@@ -265,6 +265,26 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
 }
 .site-footer a { text-decoration: underline; text-underline-offset: 0.2em; }
 
+/* ------------------------------------------------- landing page corners --- */
+/* On the landing page the four corner texts should sit the same distance from
+   the edges vertically as horizontally. Equal padding does not achieve that:
+   padding positions the *line box*, and a line box carries half-leading above
+   the glyphs plus the font's ascent above the cap height. Measured at 1440x900
+   with a 28.8px inset, the title's glyphs sat 55.9px from the top against
+   29.8px from the left, the nav 58.0px, and the footer 38.0px from the bottom.
+
+   These trims remove that difference. They are in rem, so they scale with the
+   root and hold at every viewport. Scoped to the landing page: the header and
+   footer are shared with every other page, whose chrome is matched to the
+   original and should not move. */
+body.kind-home .site-header { padding-top: calc(var(--pad) - 1.813rem); }
+/* The nav has to leave the header's baseline alignment to be trimmed at all:
+   while its baseline is pinned to the title's, a margin is absorbed by the
+   alignment and moves nothing. Its cap is smaller than the title's, so it needs
+   its own offset to land on the same inset. */
+body.kind-home .site-nav    { align-self: flex-start; margin-top: 0.6rem; }
+body.kind-home .site-footer { padding-bottom: calc(var(--pad) - 0.646rem); }
+
 /* ------------------------------------------------------------ galleries --- */
 /* Masonry, packed at build time (see build/lib.js). Every box is placed with an
    affine mix of container-query units and rem: the image share scales with the
