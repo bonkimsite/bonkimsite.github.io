@@ -277,6 +277,12 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
    root and hold at every viewport. Scoped to the landing page: the header and
    footer are shared with every other page, whose chrome is matched to the
    original and should not move. */
+/* The landing page sits its corners further in than the rest of the site. Only
+   the header and footer read --pad here -- the page itself is the wallpaper,
+   with no content box -- so overriding it moves the four corners and nothing
+   else. The trims below are fixed ink offsets, so they hold at any inset. */
+body.kind-home { --pad: 2.5rem; }
+
 body.kind-home .site-header { padding-top: calc(var(--pad) - 1.813rem); }
 /* The nav has to leave the header's baseline alignment to be trimmed at all:
    while its baseline is pinned to the title's, a margin is absorbed by the
