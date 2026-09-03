@@ -8,6 +8,7 @@
     "media": "node build/fetch-media.js",
     "fonts": "node build/fetch-fonts.js",
     "check": "node build/check.js",
+    "probe:layout": "node build/probe-layout.js",
     "all": "npm run build && npm run media && npm run fonts && npm run check",
     "serve": "npx --yes http-server site -p 8899 -c-1"
   },

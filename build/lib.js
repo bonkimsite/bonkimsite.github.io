@@ -169,34 +169,77 @@ function rewriteLinks(html, usedMedia) {
 // The original packs thumbnails into columns with a scripted masonry: each item
 // drops into the shortest column, and a featured item may span two. Aspect
 // ratios are all known here, so the same packing is computed at build time and
-// written out as container-query units — identical layout, no runtime script.
+// written as fluid CSS geometry — identical layout, no runtime script.
 const GALLERY_COLS = [3, 2, 1];   // desktop, tablet, phone
-const GAP_CQW = 1.8;              // gutter as a share of gallery width (~26/1388)
+const GALLERY_GAP_REM = 2;
+// Packing decisions need concrete dimensions even though the emitted geometry
+// remains fluid. These are representative container/root sizes for each
+// breakpoint; they only decide which equally eligible column receives an item.
+const GALLERY_REFERENCE = {
+  3: { width: 1382.4, root: 14.4 },
+  2: { width: 850.4, root: 12.4 },
+  1: { width: 510.4, root: 11.7 },
+};
 
-// Geometry is emitted in cqw: 1cqw == 1% of the gallery's own width, so a single
-// packing scales fluidly and only the column count changes at a breakpoint.
+const affine = (cqw = 0, rem = 0) => ({ cqw, rem });
+const addAffine = (a, b) => affine(a.cqw + b.cqw, a.rem + b.rem);
+const scaleAffine = (a, n) => affine(a.cqw * n, a.rem * n);
+const valueAt = (a, reference) => a.cqw / 100 * reference.width + a.rem * reference.root;
+
+function maxAffine(values, reference) {
+  return values.reduce((best, value) =>
+    valueAt(value, reference) > valueAt(best, reference) ? value : best
+  );
+}
+
+// Geometry is an affine combination of container width (cqw) and the fixed
+// 2rem gutter. Keeping both terms preserves Cargo's constant gutter at every
+// viewport; treating it as a share of gallery width only matches one width.
 function packMasonry(items, cols) {
-  const gap = GAP_CQW;
-  const colW = (100 - gap * (cols - 1)) / cols;
-  const colY = new Array(cols).fill(0);
+  const gap = affine(0, GALLERY_GAP_REM);
+  const colW = affine(100 / cols, -GALLERY_GAP_REM * (cols - 1) / cols);
+  const step = addAffine(colW, gap);
+  const reference = GALLERY_REFERENCE[cols];
+  const colY = Array.from({ length: cols }, () => affine());
   const boxes = [];
 
   for (const it of items) {
     const span = Math.min(it.span, cols);
-    let start = 0, top = Infinity;
+    let start = 0;
+    let top = null;
+    let topValue = Infinity;
     for (let s = 0; s + span <= cols; s++) {
-      const y = Math.max(...colY.slice(s, s + span));   // shortest run of columns
+      const y = maxAffine(colY.slice(s, s + span), reference);
+      const yValue = valueAt(y, reference);
       // Leftmost of equally short runs. Where two columns tie the original
       // sometimes settles the other way, so same-height neighbours can swap
       // places; column geometry and packing density are unaffected.
-      if (y < top - 1e-9) { top = y; start = s; }
+      if (yValue < topValue - 1e-9) {
+        top = y;
+        topValue = yValue;
+        start = s;
+      }
     }
-    const w = colW * span + gap * (span - 1);
-    const h = w / it.ar;
-    boxes.push({ x: start * (colW + gap), y: top, w });
-    for (let s = start; s < start + span; s++) colY[s] = top + h + gap;
+    const w = addAffine(scaleAffine(colW, span), scaleAffine(gap, span - 1));
+    const h = scaleAffine(w, 1 / it.ar);
+    boxes.push({ x: scaleAffine(step, start), y: top, w });
+    const bottom = addAffine(addAffine(top, h), gap);
+    for (let s = start; s < start + span; s++) colY[s] = bottom;
   }
-  return { boxes, height: Math.max(0, Math.max(...colY, 0) - gap) };
+  const heightWithGap = maxAffine(colY, reference);
+  return { boxes, height: addAffine(heightWithGap, scaleAffine(gap, -1)) };
+}
+
+function affineCss(value) {
+  const terms = [];
+  if (Math.abs(value.cqw) > 1e-9) terms.push(`${value.cqw.toFixed(6)}cqw`);
+  if (Math.abs(value.rem) > 1e-9) {
+    const amount = `${Math.abs(value.rem).toFixed(6)}rem`;
+    if (!terms.length) terms.push(value.rem < 0 ? `-${amount}` : amount);
+    else terms.push(`${value.rem < 0 ? '-' : '+'} ${amount}`);
+  }
+  if (!terms.length) return '0px';
+  return terms.length === 1 ? terms[0] : `calc(${terms.join(' ')})`;
 }
 
 // A media-item renders if it is an image or an embedded video url; anything
@@ -305,13 +348,13 @@ function renderGalleries(html, { usedMedia, title }) {
         packs.forEach((p, k) => {
           const b = p.boxes[i];
           const n = GALLERY_COLS[k];
-          vars.push(`--x${n}:${b.x.toFixed(3)}`, `--y${n}:${b.y.toFixed(3)}`, `--w${n}:${b.w.toFixed(3)}`);
+          vars.push(`--x${n}:${affineCss(b.x)}`, `--y${n}:${affineCss(b.y)}`, `--w${n}:${affineCss(b.w)}`);
         });
         return figureFor(it, usedMedia, vars, title);
       });
 
       const heights = packs
-        .map((p, k) => `--h${GALLERY_COLS[k]}:${p.height.toFixed(3)}`)
+        .map((p, k) => `--h${GALLERY_COLS[k]}:${affineCss(p.height)}`)
         .join(';');
       const extra = (a.class || '').trim();
       return `<div class="gallery gallery-masonry ${extra}" style="${heights}">${figures.join('')}</div>`;

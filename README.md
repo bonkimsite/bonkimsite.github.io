@@ -37,6 +37,7 @@ npm run media     # download the images the built pages reference
 npm run fonts     # cut the CJK font subset the built pages need
 npm run check     # validate the output
 npm run serve     # preview at http://localhost:8899
+npm run probe:layout  # compare the known long work against the live original
 ```
 
 `npm run all` does build + media + fonts + check.
@@ -84,15 +85,17 @@ responsive `<iframe>` to `youtube-nocookie.com` — see "runtime dependencies".
 
 The old site packed thumbnails with a script that measured images in the
 browser. Every aspect ratio is already known at build time, so `packMasonry()`
-computes the same shortest-column packing during the build and emits each box in
-container-query units (`1cqw` = 1% of the gallery's width). One packing scales
-fluidly; breakpoints only change the column count (3 → 2 → 1). No JavaScript
+computes the same shortest-column packing during the build. Each box is emitted
+as an affine combination of container-query units (`1cqw` = 1% of the gallery's
+width) and `rem`: the columns scale fluidly while the original's 2rem gutter
+stays fixed. Breakpoints only change the column count (3 → 2 → 1). No JavaScript
 ships.
 
-Verified against the live original at 1440px: identical column positions
-(26 / 497 / 968px), identical widths (917px feature, 446px columns) and heights.
-Where two columns tie exactly, the original sometimes settles the other way, so
-a pair of same-height neighbours can swap places. Density is unaffected.
+Verified against the live original at 1200, 1440, and 1600px: non-swapped image
+edges and heights stay within about 1.3px. At 1440px the original's column starts
+are 28.8 / 498.8 / 969.8px, with a 912px feature and 441px columns. Where two
+columns tie exactly, the original sometimes settles the other way, so a pair of
+same-height neighbours can swap places. Density is unaffected.
 
 ## How routing works
 
@@ -173,8 +176,9 @@ registered property's initial value must be computationally independent, and
 `rem` is not, so registering it silently drops the declaration and takes every
 untyped element's size with it.
 
-Verified by comparing every text run against the original: **207 runs across all
-21 pages agree exactly on font-size.**
+The original's desktop root is 14.4px. Keeping that root, and making each text
+class state its own line-height/display rather than accidentally inheriting from
+a caption, keeps nested scaled copy idempotent and preserves long-form wrapping.
 
 ### Layout: how the values were arrived at
 
@@ -183,18 +187,34 @@ original at a 1440px viewport and reading computed styles gives:
 
 | page | reserved above | measure |
 | --- | --- | --- |
-| works index | 95.56px | full-bleed |
-| work pages | 115.06px | 90% |
-| CV | 95.56px | 73% |
-| contact | 95.56px | 90% |
+| works index | 106.19px | full-bleed |
+| work pages | 127.88px | 90% |
+| CV | 106.19px | 73% |
+| contact | 106.19px | 90% |
 
 Work pages sit under a taller pinned header than everything else, and the CV runs
 narrower — hence `body.kind-*` in the stylesheet. The measure is a share of the
 *viewport*, padded inside; taking a share of an already-padded box shrinks it.
 
-Checked the same way, the rebuild now matches the original to **0.3-1.1px on every
-image width and x position**, and every text run agrees exactly on font-size,
-line-height, weight and letter-spacing.
+Checked the same way, work-page image geometry is within sub-pixel rounding of
+the original. The Works masonry stays within about 1.3px from 1200–1600px except
+for the documented tied-column swaps. Font size, line-height, weight, and
+letter-spacing agree on the representative simple, caption-heavy, and essay
+pages used in the current probe pass.
+
+### Re-running the layout probe
+
+`npm run probe:layout` launches an installed Chrome headlessly, visits the live
+original and rebuild, recurses into Cargo's open shadow roots, and compares the
+title, column sets, media, images, and relevant text classes at 1440px. It has no
+npm dependency; set `CHROME_PATH` if Chrome is not in a standard location.
+
+The underlying script also accepts an original URL, a rebuild URL (including a
+local `file:///` URL), an optional JSON output path, and a viewport width:
+
+```bash
+node build/probe-layout.js ORIGINAL REBUILD build/.cache/probe.json 1440
+```
 
 ## Deploying to GitHub Pages
 
@@ -261,14 +281,12 @@ alternative is a click-to-play poster image linking out to YouTube.
 
 ## Known gaps
 
-- **Vertical position drifts by 12-27px** on long work pages — under 0.5% of page
-  height, and image widths and x positions are exact. Body content sits ~11.7px
-  higher than the original relative to the page title: the title is an
-  inline-block whose line box the original makes taller by that much, and the
-  cause has not been identified. Setting the title's `line-height` to 2.6 aligns
-  every image to within 0.2px, but that inflates the title's own box from 38.5px
-  to 50px — and it has a background colour, so the block behind it would visibly
-  fatten. Not worth trading a correct metric for a coincidental fit.
+- **Work-page body content sits about 12–14px high** relative to the page title,
+  and the difference remains essentially constant down long pages. The title's
+  own geometry agrees within 0.05px; Cargo's inline formatting context positions
+  the following break lower even though its computed metrics agree. Inflating
+  the title's line-height can conceal the difference, but visibly fattens its
+  coloured background, so the verified title box is left intact.
 - **The exhibitions page is unfinished upstream** — 10 of its 16 gallery slots are
   empty placeholders in Bon's own content. The rebuild drops them rather than
   rendering holes, so the page shows the 6 real images. Nothing to fix here; it

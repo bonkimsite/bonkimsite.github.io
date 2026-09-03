@@ -70,13 +70,13 @@
   --ink-soft: rgba(0, 0, 0, 0.85);
   --paper: #ebebeb;
   --scrim: rgba(0, 0, 0, 0.53);
-  --pad: 2rem;       /* page inset: 25.92px at the 12.96px root, as the original */
+  --pad: 2rem;       /* page inset: 28.8px at the 14.4px root, as the original */
   /* Space reserved above the page for the pinned header, and the width the
      content runs to. The original does not use one value for either: measured
-     at 1440px, most pages reserve 95.56px and run to 90%, work pages sit under
-     a taller header (115.06px), the CV runs to 73%, and the works index is
-     full-bleed. Below, in rem so they track the 12.96px root.
-     At the bottom the original reserves 103.34px and overlays the footer inside
+     at 1440px, most pages reserve 106.19px and run to 90%, work pages sit under
+     a taller header (127.84px), the CV runs to 73%, and the works index is
+     full-bleed. Below, in rem so they track the 14.4px root.
+     At the bottom the original reserves 114.82px and overlays the footer inside
      it; ours keeps the footer in flow, so the footer's own box is that space. */
   --chrome-top: 7.374rem;
   --measure: 90%;
@@ -114,13 +114,13 @@ body.kind-cv   { --measure: 73%; }         /* the CV runs narrower */
 /* ------------------------------------------------------------- baseline --- */
 *, *::before, *::after { box-sizing: border-box; }
 
-/* The original's root is 12.96px, not the 16px browser default — every rem size
+/* The original's root is 14.4px, not the 16px browser default — every rem size
    in its design derives from this, so matching it is what makes the type scale
    line up. Below its desktop breakpoint the original shrinks the root further;
    this rebuild is responsive rather than a separate mobile site, so it eases
    down on its own curve instead of reproducing that one exactly. */
 html {
-  font-size: 12.96px;
+  font-size: 14.4px;
   -webkit-text-size-adjust: 100%;
 }
 @media (max-width: 900px) { html { font-size: 12.4px; } }
@@ -162,11 +162,11 @@ sup { position: relative; vertical-align: baseline; top: -0.4em; }
 
 /* Bon's text classes, carried across so her inline markup keeps working. Each
    multiplies its own base size by the element's --font-scale. */
-.small        { --fs-base: 1.3rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; display: inline-block; }
-.small-white  { --fs-base: 1.3rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; color: #fff; display: block; }
-.bodyoftextlight { --fs-base: 1.05rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 400; color: var(--ink-soft); display: block; }
-.reading      { --fs-base: 1.85rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 400; line-height: 1.8; }
-.reading-text { --fs-base: 1.2rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; }
+.small        { --fs-base: 1.3rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; line-height: 2; letter-spacing: -0.02em; display: inline-block; }
+.small-white  { --fs-base: 1.3rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; line-height: 2; letter-spacing: -0.02em; color: #fff; display: block; }
+.bodyoftextlight { --fs-base: 1.05rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 400; line-height: 2; color: var(--ink-soft); display: block; }
+.reading      { --fs-base: 1.85rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 400; line-height: 1.8; letter-spacing: -0.08em; display: block; }
+.reading-text { --fs-base: 1.2rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; line-height: 2; letter-spacing: -0.008em; display: block; }
 .small-caps   { font-variant: small-caps; text-transform: lowercase; }
 
 ol { margin: 0; padding: 0 0 0 2.5em; }
@@ -245,39 +245,40 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
 .site-footer a { text-decoration: underline; text-underline-offset: 0.2em; }
 
 /* ------------------------------------------------------------ galleries --- */
-/* Masonry, packed at build time (see build/lib.js). Every box is placed in
-   container-query units — 1cqw is 1% of the gallery's width — so one packing
-   scales fluidly and the breakpoints only swap the column count. No script.
+/* Masonry, packed at build time (see build/lib.js). Every box is placed with an
+   affine mix of container-query units and rem: the image share scales with the
+   gallery while Cargo's 2rem gutter stays fixed. Breakpoints only swap the
+   column count. No script.
    Falls back to a readable single column where cqw is unsupported. */
 .gallery-masonry {
   container-type: inline-size;
   position: relative;
   margin: 0;
-  height: calc(var(--h3) * 1cqw);
+  height: var(--h3);
 }
 .gallery-masonry .media-item {
   position: absolute;
-  left: calc(var(--x3) * 1cqw);
-  top: calc(var(--y3) * 1cqw);
-  width: calc(var(--w3) * 1cqw);
+  left: var(--x3);
+  top: var(--y3);
+  width: var(--w3);
   margin: 0;
   aspect-ratio: var(--ar);
 }
 
 @media (max-width: 900px) {
-  .gallery-masonry { height: calc(var(--h2) * 1cqw); }
+  .gallery-masonry { height: var(--h2); }
   .gallery-masonry .media-item {
-    left: calc(var(--x2) * 1cqw);
-    top: calc(var(--y2) * 1cqw);
-    width: calc(var(--w2) * 1cqw);
+    left: var(--x2);
+    top: var(--y2);
+    width: var(--w2);
   }
 }
 @media (max-width: 560px) {
-  .gallery-masonry { height: calc(var(--h1) * 1cqw); }
+  .gallery-masonry { height: var(--h1); }
   .gallery-masonry .media-item {
-    left: calc(var(--x1) * 1cqw);
-    top: calc(var(--y1) * 1cqw);
-    width: calc(var(--w1) * 1cqw);
+    left: var(--x1);
+    top: var(--y1);
+    width: var(--w1);
   }
 }
 
@@ -361,6 +362,10 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
   gap: var(--gutter, 1rem);
   margin: 0;
 }
+/* Cargo expands its default gutter when one layout block immediately follows
+   another. Most rows in this export already have explicit <br> spacing, but the
+   first two rows on "A man with three legs" are adjacent and need this gap. */
+.column-set + .column-set { margin-top: 1rem; }
 /* Cargo lays a row out as 12 columns with the gutter *between* them, so a unit
    spanning N columns also swallows the N-1 gutters inside it:
 
