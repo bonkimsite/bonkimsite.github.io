@@ -153,6 +153,29 @@ row's bases sum to `W` minus one gutter, which the single `gap` puts back.
 Images carrying `scale="50%"` take half their column so two sit side by side, and
 they bottom-align the way the original does.
 
+### Inline type scaling
+
+Bon's markup sizes type with an inline `--font-scale`, and Cargo's editor emits
+spans that nest and each repeat it — nine deep in the right-hand column of the
+Kafka page. Two rules make this behave:
+
+- **The scale multiplies a declared base (`--fs-base`), never the parent's
+  already-scaled size.** Scaling from `1em` compounds a repeated factor: 0.85
+  applied nine times rendered 11.57px text at 3.15px.
+- **It inherits.** A scale on a wrapper applies to the text inside it — measured
+  on the original, a `.bodyoftextlight` inside a span carrying 0.85 computes at
+  1.05rem × 0.85.
+
+Each text class declares the base it scales from; a nested span repeating the
+same scale is then idempotent, while one declaring a different scale still
+resizes. Note `--fs-base` is a plain custom property, not an `@property`: a
+registered property's initial value must be computationally independent, and
+`rem` is not, so registering it silently drops the declaration and takes every
+untyped element's size with it.
+
+Verified by comparing every text run against the original: **207 runs across all
+21 pages agree exactly on font-size.**
+
 ### Layout: how the values were arrived at
 
 The page chrome is not one set of numbers. Driving headless Chrome over the

@@ -80,6 +80,7 @@
      it; ours keeps the footer in flow, so the footer's own box is that space. */
   --chrome-top: 7.374rem;
   --measure: 90%;
+  --fs-base: 1.3rem;   /* the size a --font-scale multiplies, unless a class resets it */
 }
 
 body.kind-work { --chrome-top: 8.878rem; }   /* taller pinned header */
@@ -87,15 +88,28 @@ body.kind-cv   { --measure: 73%; }         /* the CV runs narrower */
 
 
 /* Bon's markup scales type inline, e.g. <span class="small" style="--font-scale: 0.9">.
-   Registering it with inherits:false is what makes that faithful: the factor
-   applies to the element carrying it and does not leak onto descendants, so a
-   scaled span inside a scaled span doesn't compound. Every sized rule below
-   multiplies its own base by it. */
+   Two things make this behave like the original.
+
+   It inherits. A scale set on a wrapper applies to the text inside it: measured
+   on the original, a .bodyoftextlight inside a span carrying 0.85 computes at
+   1.05rem x 0.85, not 1.05rem.
+
+   And it multiplies a declared *base*, never the parent's already-scaled size.
+   Cargo's editor emits spans that nest and each repeat the same --font-scale --
+   nine deep on the Kafka page -- so a rule of `1em * var(--font-scale)` compounds
+   them: 0.85 applied nine times renders 11.57px text at 3.15px. Scaling from
+   --fs-base instead makes a repeat idempotent, while a nested span that declares
+   a *different* scale still resizes, because the base carries down unchanged. */
 @property --font-scale {
   syntax: '<number>';
-  inherits: false;
+  inherits: true;
   initial-value: 1;
 }
+/* --fs-base is a plain custom property, not an @property: a registered one must
+   have a computationally independent initial value, and `rem` is not, so the
+   registration would be dropped -- taking every untyped element's font-size with
+   it, since var(--fs-base) would then be invalid on anything that did not set it.
+   Custom properties inherit by default, which is what this needs anyway. */
 
 /* ------------------------------------------------------------- baseline --- */
 *, *::before, *::after { box-sizing: border-box; }
@@ -126,11 +140,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* An element carrying --font-scale but no type class scales from its inherited
-   size. :where() keeps this at zero specificity so the typed rules below always
-   win — otherwise this attribute selector (0,1,0) would silently beat h1 (0,0,1)
-   and tie with .small, and the scale would be dropped or applied to the wrong base. */
-:where([style*="--font-scale"]) { font-size: calc(1em * var(--font-scale)); }
+/* Anything carrying a scale sizes itself the same way: base x scale. The typed
+   classes below differ only in the base they declare, so specificity no longer
+   decides the outcome — every one of these rules computes the same expression. */
+:where([style*="--font-scale"]) { font-size: calc(var(--fs-base) * var(--font-scale)); }
 
 img { max-width: 100%; display: block; }
 
@@ -139,8 +152,8 @@ a:hover { text-decoration: underline; }
 a:active, .linked:active { opacity: 0.7; }
 
 h1, h2 { margin: 0; line-height: 2; }
-h1 { font-size: calc(1.35rem * var(--font-scale)); font-weight: 700; letter-spacing: 0; }
-h2 { font-size: calc(1.2rem * var(--font-scale)); font-weight: 600; letter-spacing: 0; }
+h1 { --fs-base: 1.35rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 700; letter-spacing: 0; }
+h2 { --fs-base: 1.2rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 600; letter-spacing: 0; }
 
 hr { display: block; height: 1px; border: 0; background: rgba(0, 0, 0, 0.75); }
 
@@ -149,11 +162,11 @@ sup { position: relative; vertical-align: baseline; top: -0.4em; }
 
 /* Bon's text classes, carried across so her inline markup keeps working. Each
    multiplies its own base size by the element's --font-scale. */
-.small        { font-size: calc(1.3rem * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; display: inline-block; }
-.small-white  { font-size: calc(1.3rem * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; color: #fff; display: block; }
-.bodyoftextlight { font-size: calc(1.05rem * var(--font-scale)); font-weight: 400; color: var(--ink-soft); display: block; }
-.reading      { font-size: calc(1.85rem * var(--font-scale)); font-weight: 400; line-height: 1.8; }
-.reading-text { font-size: calc(1.2rem * var(--font-scale));  font-weight: 400; }
+.small        { --fs-base: 1.3rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; display: inline-block; }
+.small-white  { --fs-base: 1.3rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; letter-spacing: -0.02em; color: #fff; display: block; }
+.bodyoftextlight { --fs-base: 1.05rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 400; color: var(--ink-soft); display: block; }
+.reading      { --fs-base: 1.85rem; font-size: calc(var(--fs-base) * var(--font-scale)); font-weight: 400; line-height: 1.8; }
+.reading-text { --fs-base: 1.2rem;  font-size: calc(var(--fs-base) * var(--font-scale));  font-weight: 400; }
 .small-caps   { font-variant: small-caps; text-transform: lowercase; }
 
 ol { margin: 0; padding: 0 0 0 2.5em; }
@@ -306,7 +319,8 @@ blockquote { margin: 0; padding: 0 0 0 2em; }
 /* Captions inside a gallery sit over the image and appear on hover, matching
    the original. Outside a gallery they read as ordinary captions below it. */
 .media-item .caption {
-  font-size: calc(1.25rem * var(--font-scale));
+  --fs-base: 1.25rem;
+  font-size: calc(var(--fs-base) * var(--font-scale));
   font-weight: 400;
   line-height: 1.2;
   color: rgba(255, 255, 255, 0.83);
